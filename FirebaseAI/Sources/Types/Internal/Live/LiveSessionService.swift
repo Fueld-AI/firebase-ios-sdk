@@ -241,7 +241,17 @@ actor LiveSessionService {
               logServerMessage(message)
             }
           #endif
-          let response = try decodeServerMessage(message)
+          // Fueld patch: newer Live models (e.g. gemini-3.8-live) send message
+          // types this SDK has no mapping for — empty `{}` keep-alives and
+          // `voiceActivity` start/end events. Skip them instead of failing the
+          // session; malformed known messages still throw.
+          let response: BidiGenerateContentServerMessage
+          do {
+            response = try decodeServerMessage(message)
+          } catch let error as LiveSessionUnsupportedMessageError
+            where error.underlyingError is InvalidMessageTypeError {
+            continue
+          }
 
           if case .setupComplete = response.messageType {
             AILog.debug(
