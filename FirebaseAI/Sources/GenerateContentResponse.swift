@@ -585,6 +585,9 @@ extension GenerateContentResponse.UsageMetadata: Decodable {
     case cacheTokensDetails
     case candidatesTokensDetails
     case toolUsePromptTokensDetails
+    // Fueld patch: Gemini Live reports output under these names instead.
+    case responseTokenCount
+    case responseTokensDetails
   }
 
   public init(from decoder: any Decoder) throws {
@@ -595,7 +598,8 @@ extension GenerateContentResponse.UsageMetadata: Decodable {
       forKey: .cachedContentTokenCount
     ) ?? 0
     candidatesTokenCount =
-      try container.decodeIfPresent(Int.self, forKey: .candidatesTokenCount) ?? 0
+      try container.decodeIfPresent(Int.self, forKey: .candidatesTokenCount)
+      ?? container.decodeIfPresent(Int.self, forKey: .responseTokenCount) ?? 0
     toolUsePromptTokenCount =
       try container.decodeIfPresent(Int.self, forKey: .toolUsePromptTokenCount) ?? 0
     thoughtsTokenCount = try container.decodeIfPresent(Int.self, forKey: .thoughtsTokenCount) ?? 0
@@ -607,7 +611,7 @@ extension GenerateContentResponse.UsageMetadata: Decodable {
     candidatesTokensDetails = try container.decodeIfPresent(
       [ModalityTokenCount].self,
       forKey: .candidatesTokensDetails
-    ) ?? []
+    ) ?? container.decodeIfPresent([ModalityTokenCount].self, forKey: .responseTokensDetails) ?? []
     toolUsePromptTokensDetails = try container.decodeIfPresent(
       [ModalityTokenCount].self, forKey: .toolUsePromptTokensDetails
     ) ?? []
